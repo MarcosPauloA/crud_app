@@ -25,7 +25,7 @@ class ProductsList extends StatelessWidget {
         ],
       ),
       body: FutureBuilder(
-        future: produtos.fetchProdutos(),
+        future: produtos.fetchProdutosFuture,
         builder: (ctx, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());

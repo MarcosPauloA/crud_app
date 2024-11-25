@@ -1,34 +1,33 @@
-import 'package:crud_app/models/client.dart';
+import 'package:crud_app/models/product.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:crud_app/providers/client_provider.dart';
+import 'package:crud_app/providers/product_provider.dart';
 
-class Formulaire extends StatefulWidget {
-  const Formulaire({super.key});
+class FormulaireProduct extends StatefulWidget {
+  const FormulaireProduct({super.key});
 
   @override
-  State<Formulaire> createState() => _FormulaireState();
+  State<FormulaireProduct> createState() => _FormulaireProductState();
 }
 
-class _FormulaireState extends State<Formulaire> {
+class _FormulaireProductState extends State<FormulaireProduct> {
   final _formulario = GlobalKey<FormState>();
   final Map<String, String> _dadosFormulario = {};
 
-  void _carregaDadosFormulario(Client cliente) {
-    _dadosFormulario['id'] = cliente.id.toString();
-    _dadosFormulario['nome'] = cliente.nome;
-    _dadosFormulario['sobrenome'] = cliente.sobrenome;
-    _dadosFormulario['email'] = cliente.email;
-    _dadosFormulario['idade'] = cliente.idade.toString();
-    _dadosFormulario['avatarURL'] = cliente.avatarUrl;
+  void _carregaDadosFormulario(Product product) {
+    _dadosFormulario['id'] = product.id.toString();
+    _dadosFormulario['nome'] = product.nome;
+    _dadosFormulario['descricao'] = product.descricao;
+    _dadosFormulario['preco'] = product.preco.toString();
+    _dadosFormulario['dataAtualizado'] = product.dataAtualizado.toIso8601String();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final Object? cliente = ModalRoute.of(context)!.settings.arguments;
-    if (cliente != null) {
-      _carregaDadosFormulario(cliente as Client);
+    final Object? produto = ModalRoute.of(context)!.settings.arguments;
+    if (produto != null) {
+      _carregaDadosFormulario(produto as Product);
     }
   }
 
@@ -38,32 +37,31 @@ class _FormulaireState extends State<Formulaire> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Formulario de clientes'),
+        title: const Text('Formulario de produtos'),
         actions: <Widget>[
           IconButton(
             onPressed: () {
               if (_formulario.currentState!.validate()) {
                 _formulario.currentState!.save();
+                final DateTime dataAtualizado = DateTime.tryParse(_dadosFormulario['dataAtualizado'] ?? '') ?? DateTime.now();
                 if (isEditing) {
-                  Provider.of<ClientProvider>(context, listen: false).putCliente(
-                    Client(
+                  Provider.of<ProductProvider>(context, listen: false).updateProduto(
+                    Product(
                       id: _dadosFormulario['id'] ?? '',
                       nome: _dadosFormulario['nome'] ?? '',
-                      sobrenome: _dadosFormulario['sobrenome'] ?? '',
-                      email: _dadosFormulario['email'] ?? '',
-                      idade: int.parse(_dadosFormulario['idade'] ?? '0'),
-                      avatarUrl: _dadosFormulario['avatarURL'] ?? '',
+                      descricao: _dadosFormulario['descricao'] ?? '',
+                      preco: double.parse(_dadosFormulario['preco'] ?? '0'),
+                      dataAtualizado: dataAtualizado,
                     ),
                   );
                 } else {
-                  Provider.of<ClientProvider>(context, listen: false).addCliente(
-                    Client(
+                  Provider.of<ProductProvider>(context, listen: false).addProduto(
+                    Product(
                       id: '',
                       nome: _dadosFormulario['nome'] ?? '',
-                      sobrenome: _dadosFormulario['sobrenome'] ?? '',
-                      email: _dadosFormulario['email'] ?? '',
-                      idade: int.parse(_dadosFormulario['idade'] ?? '0'),
-                      avatarUrl: _dadosFormulario['avatarURL'] ?? '',
+                      descricao: _dadosFormulario['descricao'] ?? '',
+                      preco: double.parse(_dadosFormulario['preco'] ?? '0'),
+                      dataAtualizado: dataAtualizado,
                     ),
                   );
                 }
@@ -87,59 +85,48 @@ class _FormulaireState extends State<Formulaire> {
                   if (valor == null || valor.trim().isEmpty) {
                     return 'Nome Inválido';
                   }
-                  if (valor.trim().length < 3 || valor.trim().length > 25) {
-                    return "Nome deve ter entre 3 e 25 caracteres";
+                  if (valor.trim().length < 3 || valor.trim().length > 50) {
+                    return "Nome deve ter entre 3 e 50 caracteres";
                   }
                   return null;
                 },
                 onSaved: (valor) => _dadosFormulario['nome'] = valor!,
               ),
               TextFormField(
-                initialValue: _dadosFormulario['sobrenome'],
-                decoration: const InputDecoration(labelText: 'Sobrenome'),
+                initialValue: _dadosFormulario['descricao'],
+                decoration: const InputDecoration(labelText: 'Descrição'),
                 validator: (valor) {
                   if (valor == null || valor.trim().isEmpty) {
-                    return 'Sobrenome Inválido';
+                    return 'Descrição Inválida';
                   }
-                  if (valor.trim().length < 3 || valor.trim().length > 25) {
-                    return "Sobrenome deve ter entre 3 e 25 caracteres";
+                  if (valor.trim().length < 5 || valor.trim().length > 100) {
+                    return "Descrição deve ter entre 5 e 100 caracteres";
                   }
                   return null;
                 },
-                onSaved: (valor) => _dadosFormulario['sobrenome'] = valor!,
+                onSaved: (valor) => _dadosFormulario['descricao'] = valor!,
               ),
               TextFormField(
-                initialValue: _dadosFormulario['email'],
-                decoration: const InputDecoration(labelText: 'Email'),
+                initialValue: _dadosFormulario['preco'],
+                decoration: const InputDecoration(labelText: 'Preço'),
                 validator: (valor) {
-                  if (valor == null || valor.trim().isEmpty || !RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(valor)) {
-                    return 'Email Inválido';
+                  if (valor == null || valor.trim().isEmpty || double.tryParse(valor) == null || double.parse(valor) <= 0) {
+                    return 'Preço deve ser um número positivo';
                   }
                   return null;
                 },
-                onSaved: (valor) => _dadosFormulario['email'] = valor!,
+                onSaved: (valor) => _dadosFormulario['preco'] = valor!,
               ),
               TextFormField(
-                initialValue: _dadosFormulario['idade'],
-                decoration: const InputDecoration(labelText: 'Idade'),
+                initialValue: _dadosFormulario['dataAtualizado'],
+                decoration: const InputDecoration(labelText: 'Data de Atualização'),
                 validator: (valor) {
-                  if (valor == null || valor.trim().isEmpty || int.tryParse(valor) == null || int.parse(valor) <= 0 || int.parse(valor) >= 120) {
-                    return 'Idade deve ser um número positivo menor que 120';
+                  if (valor != null && valor.isNotEmpty && !RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(valor)) {
+                    return 'Data Inválida (use o formato AAAA-MM-DD)';
                   }
                   return null;
                 },
-                onSaved: (valor) => _dadosFormulario['idade'] = valor!,
-              ),
-              TextFormField(
-                initialValue: _dadosFormulario['avatarURL'],
-                decoration: const InputDecoration(labelText: 'URL do Avatar'),
-                validator: (valor) {
-                  if (valor != null && valor.isNotEmpty && !Uri.parse(valor).isAbsolute) {
-                    return 'URL Inválida';
-                  }
-                  return null;
-                },
-                onSaved: (valor) => _dadosFormulario['avatarURL'] = valor!,
+                onSaved: (valor) => _dadosFormulario['dataAtualizado'] = valor!,
               ),
             ],
           ),
